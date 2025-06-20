@@ -17,6 +17,15 @@ def progress_bar(percentage, width=10):
     bar = "█" * filled + "-" * (width - filled)
     return f"[{bar}] {percentage}%"
 
+def save_csv(habits):
+    """Saving file to csv using pandas"""
+    try:
+        file_name = f"habits{round(datetime.now().timestamp())}.csv"
+        df = pd.DataFrame(habits)
+        df.to_csv(file_name, index=False)
+        print(f"[green]Habits saved as {file_name}.[/green]")
+    except Exception as e:
+        print(f"[red]Error saving habits to CSV: {e}[/red]")
 
 def break_habits():
     # list to store all habits
@@ -221,26 +230,29 @@ def break_habits():
                 status,
             )
             habits[habit_index] = updated_habit
-
+            # save habits to JSON file
+            try:
+                with open("habits.json", "w") as json_file:
+                    json.dump(habits, json_file, indent=4)
+            except Exception as e:
+                print(f"[red]Error saving habits to file JSON: {e}[/red]")
         except ValueError as e:
             print(f"Error: {e}")
             continue
         except Exception as e:
             print(f"Unexpected error: {e}")
             continue
-
+    #promt to save as csv or 
     if habits:
-        try:
-            save_csv = f"habits{round(datetime.now().timestamp())}.csv"
-            with open("habits.json", "w") as json_file:
-                json.dump(habits, json_file, indent=4)
-            df = pd.DataFrame(habits)
-            df.to_csv(save_csv, index = False)
-            print("Habits saved to 'habits.json' and 'habits.csv'.")
-            print("[green]\nHabits saved to 'habits.json'.[/green]")
-        except Exception as e:
-            print(f"[red]Error saving habits to file: {e}[/red]")
-
+        save_option = prompt.ask("[cyan bold]Do you want to save file as a csv file? ('y' for yes, 'n' for no)[/cyan bold]").strip().upper()
+        if save_option == "Y":
+                save_csv(habits)
+                print("[green]File saved successfully![/green]")
+        elif save_option == "N":
+                print("[yellow]File did not save as csv[/yellow]")
+        else:
+                raise ValueError("[red]Invalid input[/red]")
+    
     return habits
 
 
