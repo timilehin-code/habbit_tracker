@@ -13,6 +13,10 @@ The Habit Tracker is a lightweight Python tool designed to help users monitor an
 
 ## Requirements
 - **Python**: Version 3.7 or later
+- Intermidate Understanding of python
+- understanding of python `rich` module
+- understanding of `pandas` module
+- understanding of `json` module
 
 ## dependecies
 - datetime module
