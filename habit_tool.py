@@ -11,7 +11,7 @@ prompt = Prompt()
 console = Console()
 
 
-# grapical representation of the progress made in trying to break the habit
+# graphical representation of the progress made in trying to break the habit
 def progress_bar(percentage, width=10):
     filled = int(width * percentage / 100)
     bar = "█" * filled + "-" * (width - filled)
@@ -26,6 +26,23 @@ def save_csv(habits):
         print(f"[green]Habits saved as {file_name}.[/green]")
     except Exception as e:
         print(f"[red]Error saving habits to CSV: {e}[/red]")
+
+def archive_habits(habit, habits):
+    """Archive the completed habits"""
+    try:
+        archive_file = "archive.json"
+        archive_data = []
+        if os.path.exists(archive_file):
+            with open(archive_file, "r") as archive:
+                archive_data = json.load(archive)
+        archive_data.append(habit)
+        with open(archive_file,"w") as archive:
+            json.dump(archive_data, archive, indent=4)
+        habits.remove(habit)
+        print(f"[green]Archived '{habit['habit_name']}' to '{archive_file}'.[/green]")
+    except Exception as e:
+        print(f"[red]Error archiving habit: {e}[/red]")
+
 
 def break_habits():
     # list to store all habits
@@ -205,7 +222,7 @@ def break_habits():
 
             habit = habits[habit_index]
             print(f"\nUpdating status for habit: {habit['habit_name']}")
-            status = input("Enter status ('Ongoing' or 'Defaulted'): ").strip().title()
+            status = input("Enter status ('Ongoing','Defaulted', or 'Completed'): ").strip().title()
             if status not in ["Ongoing", "Defaulted", "Completed"]:
                 raise ValueError(
                     "[yellow]Status must be 'Ongoing','Defaulted' or 'Completed'.[/yellow]"
@@ -219,6 +236,18 @@ def break_habits():
                     raise ValueError(
                         f"[yellow]Warning: your {habit[habit_name]} Habit is only {habit['% completed']} complete. ({days_elapsed:.2f}) Days is less than goal ({habit['goal']}).[/yellow]"
                     )
+                archive_option = prompt.ask("[bold cyan]Do you want to archive this habit? ('y' for yes, 'n' for no)[/bold cyan]").strip().upper()
+                if archive_option == "Y":
+                    archive_habits(habit, habits)
+                      # Save updated habits list after archiving
+                    try:
+                        with open("habits.json", "w") as json_file:
+                            json.dump(habits, json_file, indent=4)
+                        print("[green]Habits saved to 'habits.json'.[/green]")
+                    except Exception as e:
+                        print(f"[red]Error saving habits to JSON: {e}[/red]")
+                    continue  # Skip updating the habit since it's archived
+
             # Recalculate habit details with updated status
             start_date = datetime.fromisoformat(habit["start_date"])
             updated_habit = recalculating_habits(

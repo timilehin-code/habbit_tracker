@@ -30,9 +30,9 @@ The Habit Tracker is a lightweight Python tool designed to help users monitor an
    ```bash
    python --version
    ```
-2. Clone the repository (replace `yourusername` with the actual repository owner):
+2. Clone the repository (replace `oluwatimilehin` with the actual repository owner):
    ```bash
-   git clone https://github.com/yourusername/habit-tracker.git
+   git clone https://github.com/oluwatimilehin/habit-tracker.git
    ```
 3. Navigate to the project directory:
    ```bash
@@ -42,7 +42,7 @@ The Habit Tracker is a lightweight Python tool designed to help users monitor an
  ```bash
    pip install rich
  ```
- 4. make sure the python pandas module is installed on your machine. to install run the following command on your terminal:
+ 4. make sure the python pandas module is installed on your machine. to install, run the following command on your terminal:
  ```bash
    pip install pandas
  ```
@@ -85,7 +85,7 @@ Contributions are welcome! To contribute:
 4. Push to the branch (`git push origin feature/your-feature`).
 5. Open a pull request.
 
-Please report issues or suggest features via the [GitHub Issues page](https://github.com/yourusername/habit-tracker/issues).
+Please report issues or suggest features via the [GitHub Issues page](https://github.com/oluwatimilehin/habit-tracker/issues).
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
