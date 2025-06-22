@@ -17,48 +17,8 @@ def progress_bar(percentage, width=10):
     bar = "█" * filled + "-" * (width - filled)
     return f"[{bar}] {percentage}%"
 
-def save_csv(habits):
-    """Saving file to csv using pandas"""
-    try:
-        file_name = f"habits{round(datetime.now().timestamp())}.csv"
-        df = pd.DataFrame(habits)
-        df.to_csv(file_name, index=False)
-        print(f"[green]Habits saved as {file_name}.[/green]")
-    except Exception as e:
-        print(f"[red]Error saving habits to CSV: {e}[/red]")
-
-def archive_habits(habit, habits):
-    """Archive the completed habits"""
-    try:
-        archive_file = "archive.json"
-        archive_data = []
-        if os.path.exists(archive_file):
-            with open(archive_file, "r") as archive:
-                archive_data = json.load(archive)
-        archive_data.append(habit)
-        with open(archive_file,"w") as archive:
-            json.dump(archive_data, archive, indent=4)
-        habits.remove(habit)
-        print(f"[green]Archived '{habit['habit_name']}' to '{archive_file}'.[/green]")
-    except Exception as e:
-        print(f"[red]Error archiving habit: {e}[/red]")
-
-def delete_habits(habit,habits):
-    """Removing habit from the list of habits"""
-    try:
-        habits.remove(habit)
-        print(f"[green]Deleted '{habit['habit_name']}' from habits.[/green]")
-    except Exception as e:
-        print(f"[red]Error deleting habit: {e}[/red]")
-
-def break_habits():
-    # list to store all habits
-    habits = []
-
-    # calculating habits for each time habits a new habit is add or the existing habit is viewed
-    def recalculating_habits(
-        habit_name, start_date, goal, cost_per_day, minutes_wasted, status="ongoing"
-    ):
+def recalculating_habits(habit_name, start_date, goal, cost_per_day, minutes_wasted, status="ongoing"):
+        """ calculating habits for each time habits a new habit is add or the existing habit is viewed"""
         # total time elapsed in seconds
         time_elapsed = (datetime.now() - start_date).total_seconds()
         # converting the timestamp to both hours and days
@@ -90,6 +50,116 @@ def break_habits():
             "minutes_wasted": minutes_wasted,
         }
 
+def save_csv(habits):
+    """Saving file to csv using pandas"""
+    try:
+        file_name = f"habits{round(datetime.now().timestamp())}.csv"
+        df = pd.DataFrame(habits)
+        df.to_csv(file_name, index=False)
+        print(f"[green]Habits saved as {file_name}.[/green]")
+    except Exception as e:
+        print(f"[red]Error saving habits to CSV: {e}[/red]")
+
+
+def archive_habits(habit, habits):
+    """Archive the completed habits"""
+    try:
+        archive_file = "archive.json"
+        archive_data = []
+        if os.path.exists(archive_file):
+            with open(archive_file, "r") as archive:
+                archive_data = json.load(archive)
+        archive_data.append(habit)
+        with open(archive_file, "w") as archive:
+            json.dump(archive_data, archive, indent=4)
+        habits.remove(habit)
+        print(f"[green]Archived '{habit['habit_name']}' to '{archive_file}'.[/green]")
+    except Exception as e:
+        print(f"[red]Error archiving habit: {e}[/red]")
+
+
+def delete_habits(habit, habits):
+    """Removing habit from the list of habits"""
+    try:
+        habits.remove(habit)
+        print(f"[green]Deleted '{habit['habit_name']}' from habits.[/green]")
+    except Exception as e:
+        print(f"[red]Error deleting habit: {e}[/red]")
+
+
+def edit_habit(habit, habits, index):
+    """Edit habit details and update the habits list."""
+    try:
+        console.print(f"\nEditing habit: [cyan]{habit['habit_name']}[/cyan]")
+        # Prompt for new values, allowing empty input to keep existing values
+        habit_name = (
+            prompt.ask(
+                f"[bold cyan]Enter new habit name (current: {habit['habit_name']}, press Enter to keep):[/bold cyan]"
+            )
+            .strip()
+            .title()
+            or habit["habit_name"]
+        )
+        if not habit_name:
+            raise ValueError("[yellow]Habit name cannot be empty.[/yellow]")
+
+        start_date_input = prompt.ask(
+            f"[bold cyan]Enter new start date (YYYY-MM-DD HH:MM, current: {habit['start_date']}, press Enter to keep):[/bold cyan]"
+        ).strip()
+        start_date = (
+            datetime.strptime(start_date_input, "%Y-%m-%d %H:%M")
+            if start_date_input
+            else datetime.fromisoformat(habit["start_date"])
+        )
+        if start_date > datetime.now():
+            raise ValueError("[yellow]Date cannot be in the future.[/yellow]")
+
+        goal_input = prompt.ask(
+            f"[bold cyan]Enter new goal in days (current: {habit['goal']}, press Enter to keep):[/bold cyan]"
+        ).strip()
+        goal = float(goal_input) if goal_input else habit["goal"]
+        if goal <= 0:
+            raise ValueError("[yellow]Goal must be a positive number.[/yellow]")
+
+        cost_input = prompt.ask(
+            f"[bold cyan]Enter new cost per day (current: {habit['cost_per_day']}, press Enter to keep):[/bold cyan]"
+        ).strip()
+        cost_per_day = float(cost_input) if cost_input else habit["cost_per_day"]
+        if cost_per_day < 0:
+            raise ValueError("[yellow]Cost cannot be negative.[/yellow]")
+
+        minutes_input = prompt.ask(
+            f"[bold cyan]Enter new minutes wasted per day (current: {habit['minutes_wasted']}, press Enter to keep):[/bold cyan]"
+        ).strip()
+        minutes_wasted = (
+            float(minutes_input) if minutes_input else habit["minutes_wasted"]
+        )
+        if minutes_wasted < 0:
+            raise ValueError("[yellow]Minutes wasted cannot be negative.[/yellow]")
+
+        for i, h in enumerate(habits):
+            if i != index and h["habit_name"] == habit_name and h["start_date"] == start_date.isoformat():
+                raise ValueError(f"[yellow]Habit '{habit_name}' with start date {start_date} already exists.[/yellow]")
+
+        updated_habit = recalculating_habits(
+            habit_name, start_date, goal, cost_per_day, minutes_wasted, habit["status"]
+        )
+        habits[index] = updated_habit
+        print(f"[green]Updated '{habit_name}' successfully.[/green]")
+    except ValueError as e:
+        print(f"[red]Error: {e}[/red]")
+        raise
+    except Exception as e:
+        print(f"[red]Unexpected error: {e}[/red]")
+        raise
+
+
+def break_habits():
+    # list to store all habits
+    habits = []
+
+   
+
     """Load existing habits from habits.json if it exists"""
     if os.path.exists("habits.json"):
         try:
@@ -117,7 +187,7 @@ def break_habits():
         try:
             habit_name = (
                 prompt.ask(
-                    "[bold cyan]enter the habit you want to break (e.g, smoking) or done to finish:[/bold cyan]"
+                    "[bold cyan]enter the habit you want to break (e.g, smoking) or done to finish[/bold cyan]"
                 )
                 .strip()
                 .title()
@@ -178,7 +248,7 @@ def break_habits():
                 # save to json
                 with open("habits.json", "w") as json_file:
                     json.dump(habits, json_file, indent=4)
-              
+
             except Exception as e:
                 print(f"Error saving habits to file: {e}")
         except ValueError as e:
@@ -212,7 +282,7 @@ def break_habits():
         console.print(table)
         action = (
             prompt.ask(
-                "[blue]\nEnter habit number to update status, 'add' to add a new habit, or 'done' to finish: [/blue]"
+                "[blue]\nEnter habit number to update status, 'add' to add a new habit, 'done' to finish, or 'delete' to delete a habit: [/blue]"
             )
             .strip()
             .lower()
@@ -224,14 +294,27 @@ def break_habits():
             continue
         if action == "delete":
             try:
-                habit_index = int(prompt.ask("[bold cyan]Enter habit number to delete:[/bold cyan]").strip()) - 1
+                habit_index = (
+                    int(
+                        prompt.ask(
+                            "[bold cyan]Enter habit number to delete:[/bold cyan]"
+                        ).strip()
+                    )
+                    - 1
+                )
                 if habit_index < 0 or habit_index >= len(habits):
                     raise ValueError("[yellow]Invalid habit number.[/yellow]")
                 habit = habits[habit_index]
-                confirm = prompt.ask(f"[bold cyan]Confirm deletion of '{habit['habit_name']}'? ('y' for yes, 'n' for no)[/bold cyan]").strip().upper()
+                confirm = (
+                    prompt.ask(
+                        f"[bold cyan]Confirm deletion of '{habit['habit_name']}'? ('y' for yes, 'n' for no)[/bold cyan]"
+                    )
+                    .strip()
+                    .upper()
+                )
                 if confirm == "Y":
                     delete_habits(habit, habits)
-                       # Save updated habits list after deletion
+                    # Save updated habits list after deletion
                     try:
                         with open("habits.json", "w") as json_file:
                             json.dump(habits, json_file, indent=4)
@@ -239,14 +322,36 @@ def break_habits():
                     except Exception as e:
                         print(f"[red]Error saving habits to JSON: {e}[/red]")
                 elif confirm != "N":
-                    raise ValueError("[red]Invalid input: Please enter 'y' or 'n'.[/red]")
+                    raise ValueError(
+                        "[red]Invalid input: Please enter 'y' or 'n'.[/red]"
+                    )
             except ValueError as e:
                 print(f"[red]Error: {e}[/red]")
                 continue
             except Exception as e:
                 print(f"[red]Unexpected error: {e}[/red]")
                 continue
-            continue        
+            continue
+        if action == "edit":
+            try:
+                habit_index = int(prompt.ask("[bold cyan]Enter habit number to edit:[/bold cyan]").strip()) - 1
+                if habit_index < 0 or habit_index >= len(habits):
+                    raise ValueError("[yellow]Invalid habit number.[/yellow]")
+                habit = habits[habit_index]
+                edit_habit(habit, habits, habit_index)
+                try:
+                    with open("habits.json", "w") as json_file:
+                        json.dump(habits, json_file, indent=4)
+                    print("[green]Habits saved to 'habits.json'.[/green]")
+                except Exception as e:
+                    print(f"[red]Error saving habits to JSON: {e}[/red]")
+            except ValueError as e:
+                print(f"[red]Error: {e}[/red]")
+                continue
+            except Exception as e:
+                print(f"[red]Unexpected error: {e}[/red]")
+                continue
+            continue
         try:
             habit_index = int(action) - 1
             if habit_index < 0 or habit_index >= len(habits):
@@ -254,7 +359,11 @@ def break_habits():
 
             habit = habits[habit_index]
             print(f"\nUpdating status for habit: {habit['habit_name']}")
-            status = input("Enter status ('Ongoing','Defaulted', or 'Completed'): ").strip().title()
+            status = (
+                input("Enter status ('Ongoing','Defaulted', or 'Completed'): ")
+                .strip()
+                .title()
+            )
             if status not in ["Ongoing", "Defaulted", "Completed"]:
                 raise ValueError(
                     "[yellow]Status must be 'Ongoing','Defaulted' or 'Completed'.[/yellow]"
@@ -269,10 +378,16 @@ def break_habits():
                         f"[yellow]Warning: your {habit[habit_name]} Habit is only {habit['% completed']} complete. ({days_elapsed:.2f}) Days is less than goal ({habit['goal']}).[/yellow]"
                     )
                 # archiving of comppleted habits
-                archive_option = prompt.ask("[bold cyan]Do you want to archive this habit? ('y' for yes, 'n' for no)[/bold cyan]").strip().upper()
+                archive_option = (
+                    prompt.ask(
+                        "[bold cyan]Do you want to archive this habit? ('y' for yes, 'n' for no)[/bold cyan]"
+                    )
+                    .strip()
+                    .upper()
+                )
                 if archive_option == "Y":
                     archive_habits(habit, habits)
-                      # Save updated habits list after archiving
+                    # Save updated habits list after archiving
                     try:
                         with open("habits.json", "w") as json_file:
                             json.dump(habits, json_file, indent=4)
@@ -304,17 +419,23 @@ def break_habits():
         except Exception as e:
             print(f"Unexpected error: {e}")
             continue
-    #prompt to save as csv or 
+    # prompt to save as csv or
     if habits:
-        save_option = prompt.ask("[cyan bold]Do you want to save file as a csv file? ('y' for yes, 'n' for no)[/cyan bold]").strip().upper()
+        save_option = (
+            prompt.ask(
+                "[cyan bold]Do you want to save file as a csv file? ('y' for yes, 'n' for no)[/cyan bold]"
+            )
+            .strip()
+            .upper()
+        )
         if save_option == "Y":
-                save_csv(habits)
-                print("[green]File saved successfully![/green]")
+            save_csv(habits)
+            print("[green]File saved successfully![/green]")
         elif save_option == "N":
-                print("[yellow]File did not save as csv[/yellow]")
+            print("[yellow]File did not save as csv[/yellow]")
         else:
-                raise ValueError("[red]Invalid input[/red]")
-    
+            raise ValueError("[red]Invalid input[/red]")
+
     return habits
 
 
