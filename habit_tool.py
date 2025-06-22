@@ -43,6 +43,13 @@ def archive_habits(habit, habits):
     except Exception as e:
         print(f"[red]Error archiving habit: {e}[/red]")
 
+def delete_habits(habit,habits):
+    """Removing habit from the list of habits"""
+    try:
+        habits.remove(habit)
+        print(f"[green]Deleted '{habit['habit_name']}' from habits.[/green]")
+    except Exception as e:
+        print(f"[red]Error deleting habit: {e}[/red]")
 
 def break_habits():
     # list to store all habits
@@ -215,6 +222,31 @@ def break_habits():
             break
         if action == "add":
             continue
+        if action == "delete":
+            try:
+                habit_index = int(prompt.ask("[bold cyan]Enter habit number to delete:[/bold cyan]").strip()) - 1
+                if habit_index < 0 or habit_index >= len(habits):
+                    raise ValueError("[yellow]Invalid habit number.[/yellow]")
+                habit = habits[habit_index]
+                confirm = prompt.ask(f"[bold cyan]Confirm deletion of '{habit['habit_name']}'? ('y' for yes, 'n' for no)[/bold cyan]").strip().upper()
+                if confirm == "Y":
+                    delete_habits(habit, habits)
+                       # Save updated habits list after deletion
+                    try:
+                        with open("habits.json", "w") as json_file:
+                            json.dump(habits, json_file, indent=4)
+                        print("[green]Habits saved to 'habits.json'.[/green]")
+                    except Exception as e:
+                        print(f"[red]Error saving habits to JSON: {e}[/red]")
+                elif confirm != "N":
+                    raise ValueError("[red]Invalid input: Please enter 'y' or 'n'.[/red]")
+            except ValueError as e:
+                print(f"[red]Error: {e}[/red]")
+                continue
+            except Exception as e:
+                print(f"[red]Unexpected error: {e}[/red]")
+                continue
+            continue        
         try:
             habit_index = int(action) - 1
             if habit_index < 0 or habit_index >= len(habits):
@@ -236,6 +268,7 @@ def break_habits():
                     raise ValueError(
                         f"[yellow]Warning: your {habit[habit_name]} Habit is only {habit['% completed']} complete. ({days_elapsed:.2f}) Days is less than goal ({habit['goal']}).[/yellow]"
                     )
+                # archiving of comppleted habits
                 archive_option = prompt.ask("[bold cyan]Do you want to archive this habit? ('y' for yes, 'n' for no)[/bold cyan]").strip().upper()
                 if archive_option == "Y":
                     archive_habits(habit, habits)
@@ -271,7 +304,7 @@ def break_habits():
         except Exception as e:
             print(f"Unexpected error: {e}")
             continue
-    #promt to save as csv or 
+    #prompt to save as csv or 
     if habits:
         save_option = prompt.ask("[cyan bold]Do you want to save file as a csv file? ('y' for yes, 'n' for no)[/cyan bold]").strip().upper()
         if save_option == "Y":

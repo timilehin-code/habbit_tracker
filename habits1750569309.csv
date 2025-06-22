@@ -1,0 +1,4 @@
+habit_name,start_date,time_since,days_remaining,minutes_saved,% completed,money_saved,progress_bar,status,goal,cost_per_day,minutes_wasted
+Drinking,2025-06-17T01:00:00,5.22days,40,156.6,11.6%,"₦7,830.0",[█---------] 11.6%,ongoing,45,1500.0,30.0
+Smoking,2025-06-01T10:10:00,20.84days,19,416.8,52.1%,"₦12,504.0",[█████-----] 52.1%,ongoing,40,600.0,20.0
+Mastubating,2025-06-01T10:06:00,20.84days,59,416.8,26.05%,₦833.6,[██--------] 26.05%,ongoing,80,40.0,20.0
