@@ -12,6 +12,7 @@ The Habit Tracker is a lightweight Python tool designed to help users monitor an
 - saving of habits being tracked
 - saving of habits as a `CSV` or `JSON` file
 - Archiving of the **completed** habits
+- deleting of habit feature
 
 ## Requirements
 - **Python**: Version 3.7 or later
