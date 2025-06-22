@@ -17,6 +17,7 @@ def progress_bar(percentage, width=10):
     bar = "█" * filled + "-" * (width - filled)
     return f"[{bar}] {percentage}%"
 
+
 def recalculating_habits(habit_name, start_date, goal, cost_per_day, minutes_wasted, status="ongoing"):
         """ calculating habits for each time habits a new habit is add or the existing habit is viewed"""
         # total time elapsed in seconds
@@ -49,6 +50,7 @@ def recalculating_habits(habit_name, start_date, goal, cost_per_day, minutes_was
             "cost_per_day": cost_per_day,
             "minutes_wasted": minutes_wasted,
         }
+
 
 def save_csv(habits):
     """Saving file to csv using pandas"""
