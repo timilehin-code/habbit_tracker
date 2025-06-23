@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 import json
 import os
 import pandas as pd
@@ -14,42 +14,46 @@ console = Console()
 # graphical representation of the progress made in trying to break the habit
 def progress_bar(percentage, width=10):
     filled = int(width * percentage / 100)
-    bar = "█" * filled + "-" * (width - filled)
+    bar = "█" * filled + "▒" * (width - filled)
     return f"[{bar}] {percentage}%"
 
 
-def recalculating_habits(habit_name, start_date, goal, cost_per_day, minutes_wasted, status="ongoing"):
-        """ calculating habits for each time habits a new habit is add or the existing habit is viewed"""
-        # total time elapsed in seconds
-        time_elapsed = (datetime.now() - start_date).total_seconds()
-        # converting the timestamp to both hours and days
-        hours = round(time_elapsed / 60 / 60, 1)
-        days = round(hours / 24, 2)
-        # extra details like money saved
-        money_saved = cost_per_day * days
-        minutes_saved = round(days * minutes_wasted, 1)
-        days_to_go = round(goal - days)
-        total_percentage_completed = round(days / goal * 100, 2)
+def recalculating_habits(
+    habit_name, start_date, goal, cost_per_day, minutes_wasted, status="ongoing", streak=0, completion_dates=None
+):
+    """calculating habits for each time habits a new habit is add or the existing habit is viewed"""
+    # total time elapsed in seconds
+    time_elapsed = (datetime.now() - start_date).total_seconds()
+    # converting the timestamp to both hours and days
+    hours = round(time_elapsed / 60 / 60, 1)
+    days = round(hours / 24, 2)
+    # extra details like money saved
+    money_saved = cost_per_day * days
+    minutes_saved = round(days * minutes_wasted, 1)
+    days_to_go = round(goal - days)
+    total_percentage_completed = round(days / goal * 100, 2)
 
-        """change hours to days if it is more than 48 hours"""
-        if hours > 48:
-            hours = str(days) + "days"
-        else:
-            hours = str(hours) + "hours"
-        return {
-            "habit_name": habit_name,
-            "start_date": start_date.isoformat(),
-            "time_since": hours,
-            "days_remaining": days_to_go,
-            "minutes_saved": minutes_saved,
-            "% completed": f"{total_percentage_completed}%",
-            "money_saved": f"₦{money_saved:,}",
-            "progress_bar": progress_bar(total_percentage_completed),
-            "status": status,
-            "goal": goal,
-            "cost_per_day": cost_per_day,
-            "minutes_wasted": minutes_wasted,
-        }
+    """change hours to days if it is more than 48 hours"""
+    if hours > 48:
+        hours = str(days) + "days"
+    else:
+        hours = str(hours) + "hours"
+    return {
+        "habit_name": habit_name,
+        "start_date": start_date.isoformat(),
+        "time_since": hours,
+        "days_remaining": days_to_go,
+        "minutes_saved": minutes_saved,
+        "% completed": f"{total_percentage_completed}%",
+        "money_saved": f"₦{money_saved:,}",
+        "progress_bar": progress_bar(total_percentage_completed),
+        "status": status,
+        "goal": goal,
+        "cost_per_day": cost_per_day,
+        "minutes_wasted": minutes_wasted,
+         "streak": streak,
+        "completion_dates": completion_dates if completion_dates is not None else []
+    }
 
 
 def save_csv(habits):
@@ -140,8 +144,14 @@ def edit_habit(habit, habits, index):
             raise ValueError("[yellow]Minutes wasted cannot be negative.[/yellow]")
 
         for i, h in enumerate(habits):
-            if i != index and h["habit_name"] == habit_name and h["start_date"] == start_date.isoformat():
-                raise ValueError(f"[yellow]Habit '{habit_name}' with start date {start_date} already exists.[/yellow]")
+            if (
+                i != index
+                and h["habit_name"] == habit_name
+                and h["start_date"] == start_date.isoformat()
+            ):
+                raise ValueError(
+                    f"[yellow]Habit '{habit_name}' with start date {start_date} already exists.[/yellow]"
+                )
 
         updated_habit = recalculating_habits(
             habit_name, start_date, goal, cost_per_day, minutes_wasted, habit["status"]
@@ -160,8 +170,6 @@ def break_habits():
     # list to store all habits
     habits = []
 
-   
-
     """Load existing habits from habits.json if it exists"""
     if os.path.exists("habits.json"):
         try:
@@ -176,6 +184,8 @@ def break_habits():
                     habit.get("cost_per_day", 0),  # Default cost if missing
                     habit.get("minutes_wasted", 0),  # Default minutes if missing
                     habit.get("status", "Ongoing"),  # Retain status
+                    habit.get("streak", 0),
+                    habit.get("completion_dates", [])
                 )
                 habits.append(updated_habit)
             print("[blue]Loaded existing habits from 'habits.json'.[/blue]")
@@ -183,7 +193,39 @@ def break_habits():
             print(
                 f"[red]Error loading habits from file: {e}. Starting with an empty list.[/red]"
             )
-
+    today = date.today()
+    for habit in habits:
+        if str(today) not in habit["completion_dates"]:
+            yesterday = (datetime.now() - pd.Timedelta(days=1)).date()
+            if str(yesterday) in habit["completion_dates"]:
+                completed = (
+                    prompt.ask(
+                        f"[bold cyan]Did you complete '{habit['habit_name']}' today? (y/n)[/bold cyan]"
+                    )
+                    .strip()
+                    .lower()
+                    == "y"
+                )
+                if completed:
+                    habit["completion_dates"].append(str(today))
+                    habit["streak"] += 1
+                else:
+                    habit["streak"] = 0
+            else:
+                habit["streak"] = 0
+        start_date = datetime.fromisoformat(habit["start_date"])
+        habit.update(
+            recalculating_habits(
+                habit["habit_name"],
+                start_date,
+                habit["goal"],
+                habit["cost_per_day"],
+                habit["minutes_wasted"],
+                habit["status"],
+                habit["streak"],
+                habit["completion_dates"],
+            )
+        )
     # getting the  user input using try except
     while True:
         try:
@@ -277,14 +319,15 @@ def break_habits():
         table.add_column("Habit", style="cyan")
         table.add_column("Status", style="yellow")
         table.add_column("% Completed", style="green")
+        table.add_column("Streak", style="blue")
         for i, habit in enumerate(habits, 1):
             table.add_row(
-                str(i), habit["habit_name"], habit["status"], habit["% completed"]
+                str(i), habit["habit_name"], habit["status"], habit["% completed"], f"{habit['streak']} days"
             )
         console.print(table)
         action = (
             prompt.ask(
-                "[blue]\nEnter habit number to update status, 'add' to add a new habit, 'done' to finish, or 'delete' to delete a habit: [/blue]"
+                "[blue]\nEnter habit number to update status, 'add' to add a new habit, 'done' to finish, 'edit' to edit a habit, or 'delete' to delete a habit [/blue]"
             )
             .strip()
             .lower()
@@ -336,7 +379,14 @@ def break_habits():
             continue
         if action == "edit":
             try:
-                habit_index = int(prompt.ask("[bold cyan]Enter habit number to edit:[/bold cyan]").strip()) - 1
+                habit_index = (
+                    int(
+                        prompt.ask(
+                            "[bold cyan]Enter habit number to edit:[/bold cyan]"
+                        ).strip()
+                    )
+                    - 1
+                )
                 if habit_index < 0 or habit_index >= len(habits):
                     raise ValueError("[yellow]Invalid habit number.[/yellow]")
                 habit = habits[habit_index]
@@ -407,6 +457,8 @@ def break_habits():
                 habit["cost_per_day"],
                 habit["minutes_wasted"],
                 status,
+                habit["streak"], 
+                habit["completion_dates"]
             )
             habits[habit_index] = updated_habit
             # save habits to JSON file
@@ -459,8 +511,9 @@ if result:
     table.add_column("Progress", justify="left", style="green")
     table.add_column(
         "Status",
-        justify="left",
+        justify="left", style="yellow"
     )
+    table.add_column("Streak", style="blue")
     for i, habit in enumerate(result, 1):
         table.add_row(
             str(i),
@@ -473,6 +526,8 @@ if result:
             habit["money_saved"],
             habit["progress_bar"],
             habit["status"],
+            f"{habit['streak']} days"
+            
         )
 
     console.print(table)
